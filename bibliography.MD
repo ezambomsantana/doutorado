@@ -3,9 +3,8 @@
 ## Smart City Platofmrs
 
 ## Smart City Simulation
-
+~~~~
 @article{Zehe2015157,
-
 	title = "\{SEMSim\} Cloud Service: Large-scale urban systems simulation in the cloud ",	
 	journal = "Simulation Modelling Practice and Theory ",	
 	volume = "58, Part 2",	
@@ -17,6 +16,7 @@
 	doi = "http://dx.doi.org/10.1016/j.simpat.2015.05.005",
 	author = "Daniel Zehe and Alois Knoll and Wentong Cai and Heiko Aydt",
 }
+~~~~
 
 ## Other
 
