@@ -18,6 +18,20 @@
 }
 ~~~~
 
+~~~~
+@article{zhou2014dtalite,
+  title={DTALite: A queue-based mesoscopic traffic simulator for fast model evaluation and calibration},
+  author={Zhou, Xuesong and Taylor, Jeffrey},
+  journal={Cogent Engineering},
+  volume={1},
+  number={1},
+  pages={961345},
+  year={2014},
+  publisher={Taylor \& Francis}
+}
+
+~~~~
+
 ## Other
 
 ## Mine
