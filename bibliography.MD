@@ -29,7 +29,6 @@
   year={2014},
   publisher={Taylor \& Francis}
 }
-
 ~~~~
 ~~~~
 @article{Song201746,
@@ -44,7 +43,6 @@
   url = "http://www.sciencedirect.com/science/article/pii/S1569190X17300175",
   author = "Xiao Song and Ziping Xie and Yan Xu and Gary Tan and Wenjie Tang and Jing Bi and Xiaosong Li"
 }
-
 ~~~~
 
 ## Other
