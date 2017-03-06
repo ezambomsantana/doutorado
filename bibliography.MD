@@ -31,6 +31,21 @@
 }
 
 ~~~~
+~~~~
+@article{Song201746,
+  title = "Supporting real-world network-oriented mesoscopic traffic simulation on \{GPU\} ",
+  journal = "Simulation Modelling Practice and Theory ",
+  volume = "74",
+  number = "",
+  pages = "46 - 63",
+  year = "2017",
+  issn = "1569-190X",
+  doi = "http://dx.doi.org/10.1016/j.simpat.2017.02.003",
+  url = "http://www.sciencedirect.com/science/article/pii/S1569190X17300175",
+  author = "Xiao Song and Ziping Xie and Yan Xu and Gary Tan and Wenjie Tang and Jing Bi and Xiaosong Li"
+}
+
+~~~~
 
 ## Other
 
