@@ -3,38 +3,25 @@
 -include_lib("../deps/amqp_client/include/amqp_client.hrl").
 
 -export([
-         start_service/2
+         start_service/3, get_data_park/0
         ]).
 
 
-start_service ( ActorName , CarCoordinates ) ->
+start_service ( ActorName , CarCoordinates , Channel ) ->
 
 	Park = call_parking_service( CarCoordinates ),
 
-	publish_data( ActorName , Park , "data_stream" ).
+	publish_data( ActorName , Park , "data_stream" , Channel ).
 
-publish_data( ActorName , Park , _Topic ) ->
-
-	{ _ , Pwd } = file:get_cwd(),
-
-	RoutingKey = string:concat( "car", ActorName),
-
-	AmqpClientPath = string:concat( Pwd, "/../deps/amqp_client"),
-
-	EbinPath = string:concat( AmqpClientPath, "/ebin" ),
-	CommonPath = string:concat( AmqpClientPath, "/include/rabbit_common/ebin" ),
-
-    	code:add_pathsa( [ AmqpClientPath , EbinPath , CommonPath ]	 ),
-
-	{ ok, Connection } = amqp_connection:start( #amqp_params_network{} ),
-	{ ok, Channel } = amqp_connection:open_channel( Connection ),
+publish_data( ActorName , Park , _Topic  , Channel ) ->
 
 	Exchange = #'exchange.declare'{ exchange = <<"simulator_exchange">>,
                                     type = <<"topic">> },
+
 	#'exchange.declare_ok'{} = amqp_channel:call( Channel, Exchange ),
 
 	Publish = #'basic.publish'{ exchange = <<"simulator_exchange">>,
-                                routing_key = list_to_binary( RoutingKey ) },
+                                routing_key = list_to_binary( ActorName ) },
 
 	amqp_channel:cast( Channel,
 					   Publish,
@@ -51,3 +38,17 @@ call_parking_service( _Coordinates ) ->
    %   httpc:request(get, {URL, []}, [], []),
 
     %string:sub_string(Body, 24, 59).
+
+
+
+
+
+get_data_park() ->
+    receive
+        {#'basic.deliver'{routing_key = RoutingKey}, #amqp_msg{payload = Body}} ->
+            io:format(" [x] ~p:~p~n", [RoutingKey, Body]),
+	    "certo";
+        Any ->
+            io:format("received unexpected Any: ~p~n", [Any]),
+	    "any"
+    end.
