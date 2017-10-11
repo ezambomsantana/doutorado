@@ -26,17 +26,23 @@ names <- c("Start Travel Time")
 colors <- c("#56B4E9")
   
 theme_set(theme_gray(base_size = 18))
-png('hist_cost_diff.png')
+png('hist_time_start.png')
 ggplot(melt(data_start_travel_time), aes(value, fill=variable)) + geom_histogram(binwidth=1, position="dodge") +
   scale_fill_manual("Scenarios", labels = names, values = colors) +
   xlab("Financial cost gain (BRL)") + ylab("Number of Persons") +
   theme(legend.position="bottom")
 dev.off()
 
+pointAttribs <- xpathSApply(xmlfile, "/events/event[@type='arrival']",  xmlAttrs)
+
+# TRANSPOSE XPATH LIST TO DF 
+df <- data.frame(t(pointAttribs))
+
+
 
 mode = c("Car", "Bus", "Walk", "Subway")
-count = c(dim(filter(hflights_df, legMode == "car"))[1], dim(filter(hflights_df, legMode == "bus"))[1],
-      dim(filter(hflights_df, legMode == "walk"))[1], dim(filter(hflights_df, legMode == "metro"))[1])
+count = c(dim(filter(df, legMode == "car"))[1], dim(filter(df, legMode == "bus"))[1],
+      dim(filter(df, legMode == "walk"))[1], dim(filter(df, legMode == "metro"))[1])
 
 count_data_car <- data.frame( mode, count)
 
