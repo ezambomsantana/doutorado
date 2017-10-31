@@ -21,12 +21,9 @@ df[c('legMode')] <- sapply(df[c('legMode')], function(x) factor(x))
 
 hist(df$trip_time)
 
-
 horas <- c(0,3600,7200,10800,14400,18000,21600,25200,28800,32400,36000,39600,43200,46800,50400,54000,57600,61200,64800,68400,72000,75600,79200,82800,86400)
-time <- aggregate(df$trip_time, list(cut(df$time, breaks=horas)), mean)
+time <- aggregate(df$trip_time, list(cut(df$time, breaks=horas)), FUN=mean)
 
-
-plot(time$Group.1, time$x)
 
 ps <- data.frame(xspline(time[,1:2], shape=-0.2, lwd=2, draw=F))
 ggplot(data=time, aes(x=Group.1, y=x, group=1)) +
