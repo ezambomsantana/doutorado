@@ -7,7 +7,7 @@ library(data.table)
 
 setwd("/home/eduardo/saidas")
 
-xmlfile=xmlParse("events2.xml")
+xmlfile=xmlParse("events3.xml")
 
 pointAttribs <- xpathSApply(doc=xmlfile, path="/events/event[@type='arrival']",  xmlAttrs)
 # TRANSPOSE XPATH LIST TO DF 
@@ -24,6 +24,7 @@ horas <- c(0,3600,7200,10800,14400,18000,21600,25200,28800,32400,36000,39600,432
 time <- aggregate(df$trip_time, list(cut(df$time, breaks=horas)), FUN=mean)
 mean(df$trip_time)
 
-ps <- data.frame(xspline(time[,1:2], shape=-0.2, lwd=2, draw=F))
+ps <- data.frame(xspline(time[,1:2], shape=-0.2, lwd=2, draw=F ))
 ggplot(data=time, aes(x=Group.1, y=x, group=1)) +
-  geom_path(data=ps, aes(x, y), col=1)
+  geom_path(data=ps, aes(x, y), col="#56B4E9" ) +
+  xlab("Hour of the Day") + ylab("Travel Time (Seconds)")
