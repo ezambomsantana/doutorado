@@ -7,9 +7,9 @@ require("gridExtra")
 
 library(data.table)
 
-setwd("/home/eduardo/entrada/od")
+setwd("/home/eduardo/saidas")
 
-xmlfile=xmlParse("trips2.xml")
+xmlfile=xmlParse("trips.xml")
 
 pointAttribs <- xpathSApply(doc=xmlfile, path="/scsimulator_matrix/trip",  xmlAttrs)
 # TRANSPOSE XPATH LIST TO DF 
@@ -23,9 +23,14 @@ horas <- c(0,3600,7200,10800,14400,18000,21600,25200,28800,32400,36000,39600,432
 time <- aggregate(df$count, list(cut(df$start, breaks=horas)), sum)
 
 time$horas <- c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
-time$x <- time$x / 1000
+time$x <- time$x/1000
 
 ps <- data.frame(xspline(time[,1:2], shape=-0.2, lwd=2, draw=F))
+
+
+theme_set(theme_gray(base_size = 18))
+png('trip_count.png')
 ggplot(data=time, aes(x=horas, y=x, group=1)) +
   geom_bar(stat="identity", fill="#56B4E9") +
   xlab("Hour of the Day") + ylab("Number of People (x 1000)")
+dev.off()
