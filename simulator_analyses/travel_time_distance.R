@@ -21,18 +21,18 @@ distance <- aggregate(data_car$distance, list(cut(data_car$time, breaks=horas)),
 
 
 time$horas <- c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
-time$distance <- distance$x
-time$tempo <- time$x
+time$distance <- distance$x / 1000
+time$tempo <- time$x / 60
 
 tempo_medio <- ggplot(time, aes(x = horas)) + 
   geom_line(aes(y = tempo), color="steelblue") +
   xlab("Hora do Dia") + 
-  ylab("Tempo Médio das Viagens")
+  ylab("Tempo Médio das Viagens (m)")
 
 distancia <- ggplot(time, aes(x = horas)) + 
   geom_line(aes(y = distance), color='red') + 
   xlab("Hora do Dia") + 
-  ylab("Distância Média das Viagens")
+  ylab("Distância Média das Viagens (km)")
 
 theme_set(theme_gray(base_size = 18))
 png('time_distance.png', width = 800, height = 400)
