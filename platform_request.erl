@@ -29,8 +29,6 @@ receive_park( ActorName , Park ) ->
         put (ActorName , Park ).
 
 verify_park_by_actor_name( ActorName , PID ) ->
-	io:format("teste: ~w", [ PID ] ),
-
        Park = get( ActorName ),
        case Park of
 	    undefined -> PID ! { nok };
@@ -118,3 +116,4 @@ save_timestamp_error( Result , FirstTimestamp , SecondTimestamp , Reason , Time 
 	File = get( file ),	
 
 	file_utils:write( File, "~s,~s,~s,~w,~s\n" , [ Result , FirstTimestamp , SecondTimestamp , Time , Reason ] ).
+
