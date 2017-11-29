@@ -3,7 +3,7 @@
 -include_lib("../deps/amqp_client/include/amqp_client.hrl").
 
 -export([
-         start_server/0, make_call/4, receive_park/2, verify_park_by_actor_name/2, call_parking_service/6, init_file_service/0, save_timestamp/4
+         start_server/0, make_call/4, receive_park/2, verify_park_by_actor_name/2, call_parking_service/6, init_file_service/0, save_timestamp/6
         ]).
 
 start_server( ) ->
@@ -43,19 +43,24 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
     { { Year, Month, Day }, { Hour, Minute, Second } } = calendar:local_time(),
     FirstTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
                                           [ Year, Month, Day, Hour, Minute, Second ] ) ),
-
+%kong-proxy
+%172.19.66.212
     URL = "http://kong-proxy:8000/discovery/resources?capability=parking_monitoring;lat=" ++ element( 1 , Coordinates ) ++ ";lon=" ++ element( 2 , Coordinates ) ++ ";radius=" ++ integer_to_list( Radius ) ++ ";available.eq=true",
+
+    FirstMiliseconds = get_timestamp(),
 
   case httpc:request(get, {URL, []}, [], []) of
 	{ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
    		{ { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
     		SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
                                           [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
- 
+		
+    		SecondMiliseconds = get_timestamp(),
+
 		case length(Body) < 30 of
 		
 			true -> 
-				FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time },
+				FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
 				call_parking_service( ActorName , Coordinates , PID , Radius * 2 , FileServicePID , Time );
 			false -> 
 
@@ -67,7 +72,7 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 				end,
 
 
-				FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time },
+				FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
 				PID ! { receive_park , ActorName , Park }
 	        end;
 
@@ -75,8 +80,10 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
              { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
              SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
                                           [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
+
+	     SecondMiliseconds = get_timestamp(),
   		
-	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "timeout" , Time };
+	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "timeout" , Time , FirstMiliseconds , SecondMiliseconds };
 
 
 	{ error , Reason } ->
@@ -84,36 +91,41 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
              SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
                                           [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
   		
-	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , Reason , Time }
+             SecondMiliseconds = get_timestamp(),
+
+	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds }
   end.
 
 
-  
+get_timestamp() ->
+  {Mega, Sec, Micro} = os:timestamp(),
+  (Mega*1000000 + Sec)*1000 + round(Micro/1000).
 
 init_file_service() ->
 
-	File = file_utils:open( "../output/response_time.csv" , _Opts=[ append, delayed_write ] ),
+	File = file_utils:open( "../output/response_time.csv" , _Opts=[ write , delayed_write ] ),
         put ( file , File ),
 	run_file_service().
 
 run_file_service() ->
 	receive
-		{ save_timestamp , FirstTimestamp , SecondTimestamp , Time } -> save_timestamp( "success" , FirstTimestamp , SecondTimestamp , Time );
-		{ save_error , FirstTimestamp , SecondTimestamp , Reason , Time } -> save_timestamp_error( "error" , FirstTimestamp , SecondTimestamp , Reason , Time )
+		{ save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds } -> 
+ 		   save_timestamp( "success" , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds );
+		{ save_error , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds } -> 
+		   save_timestamp_error( "error" , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds )
 	end,
 	run_file_service( ).
 
 
-save_timestamp( Result , FirstTimestamp , SecondTimestamp , Time ) ->
+save_timestamp( Result , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds ) ->
 
 	File = get( file ),	
 
-	file_utils:write( File, "~s,~s,~s,~w\n" , [ Result , FirstTimestamp , SecondTimestamp , Time ] ).
+	file_utils:write( File, "~s,~s,~s,~w,~w,~w\n" , [ Result , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds ] ).
 
 
-save_timestamp_error( Result , FirstTimestamp , SecondTimestamp , Reason , Time ) ->
+save_timestamp_error( Result , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds ) ->
 
 	File = get( file ),	
 
-	file_utils:write( File, "~s,~s,~s,~w,~s\n" , [ Result , FirstTimestamp , SecondTimestamp , Time , Reason ] ).
-
+	file_utils:write( File, "~s,~s,~s,~w,~s,~w,~w\n" , [ Result , FirstTimestamp , SecondTimestamp , Time , Reason , FirstMiliseconds , SecondMiliseconds ] ).
