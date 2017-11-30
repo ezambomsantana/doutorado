@@ -1,0 +1,5 @@
+./waf configure
+
+./waf
+
+./waf --run "scratch/ns2-mobility-trace --traceFile=mobility.tcl --logFile=main-ns2-mob.log --duration=10 --outFile=test" 
