@@ -38,83 +38,92 @@ verify_park_by_actor_name( ActorName , PID ) ->
 		
 call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , Time ) ->
 
-    inets:start(),
+    case Radius > 300 of
 
-    { { Year, Month, Day }, { Hour, Minute, Second } } = calendar:local_time(),
-    FirstTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-                                          [ Year, Month, Day, Hour, Minute, Second ] ) ),
-%kong-proxy
-%172.19.66.212
-    URL = "http://kong-proxy:8000/discovery/resources?capability=parking_monitoring;lat=" ++ element( 1 , Coordinates ) ++ ";lon=" ++ element( 2 , Coordinates ) ++ ";radius=" ++ integer_to_list( Radius ) ++ ";available.eq=true",
+	true -> 
+	
+		ok;
 
-    FirstMiliseconds = get_timestamp(),
+	false ->
 
-  case httpc:request(get, {URL, []}, [], []) of
-	{ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
-   		{ { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
-    		SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-                                          [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
+	    inets:start(),
+
+	    { { Year, Month, Day }, { Hour, Minute, Second } } = calendar:local_time(),
+	    FirstTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+		                                  [ Year, Month, Day, Hour, Minute, Second ] ) ),
+	%kong-proxy
+	%172.19.66.212
+	    URL = "http://kong-proxy:8000/discovery/resources?capability=parking_monitoring;lat=" ++ element( 1 , Coordinates ) ++ ";lon=" ++ element( 2 , Coordinates ) ++ ";radius=" ++ integer_to_list( Radius ) ++ ";available.eq=true",
+
+	    FirstMiliseconds = get_timestamp(),
+
+	  case httpc:request(get, {URL, []}, [], []) of
+		{ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+	   		{ { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
+	    		SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+		                                  [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
 		
-    		SecondMiliseconds = get_timestamp(),
+	    		SecondMiliseconds = get_timestamp(),
 
-		case length(Body) < 30 of
+			case length(Body) < 30 of
 		
-			true -> 
-				FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
-				call_parking_service( ActorName , Coordinates , PID , Radius * 2 , FileServicePID , Time );
-			false -> 
+				true -> 
+					FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
+					call_parking_service( ActorName , Coordinates , PID , Radius * 2 , FileServicePID , Time );
+				false -> 
 
-				RegExp = "uuid.*",
-				Park = case re:run( Body, RegExp ) of
-				  {match, Captured} -> 					
-					Index = element( 1 , list_utils:get_element_at( Captured , 1 ) ),
-					string:sub_string( Body , Index + 8, Index + 43)					
-				end,
-
-
-				FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
-				PID ! { receive_park , ActorName , Park }
-	        end;
-
-	{ok, {{_Version, 504, _ReasonPhrase}, _Headers, _Body}} ->
-             { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
-             SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-                                          [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
-
-	     SecondMiliseconds = get_timestamp(),
-  		
-	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "timeout" , Time , FirstMiliseconds , SecondMiliseconds };
+					RegExp = "uuid.*",
+					Park = case re:run( Body, RegExp ) of
+					  {match, Captured} -> 					
+						Index = element( 1 , list_utils:get_element_at( Captured , 1 ) ),
+						string:sub_string( Body , Index + 8, Index + 43)					
+					end,
 
 
-	{ok, {{_Version, 503, _ReasonPhrase}, _Headers, _Body}} ->
-             { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
-             SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-                                          [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
+					FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
+					PID ! { receive_park , ActorName , Park }
+			end;
 
-	     SecondMiliseconds = get_timestamp(),
-  		
-	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "service unavailable" , Time , FirstMiliseconds , SecondMiliseconds };
+		{ok, {{_Version, 504, _ReasonPhrase}, _Headers, _Body}} ->
+		     { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
+		     SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+		                                  [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
 
-	{ok, {{_Version, 500, _ReasonPhrase}, _Headers, _Body}} ->
-             { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
-             SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-                                          [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
-
-	     SecondMiliseconds = get_timestamp(),
-  		
-	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "internal server error" , Time , FirstMiliseconds , SecondMiliseconds };
+		     SecondMiliseconds = get_timestamp(),
+	  		
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "timeout" , Time , FirstMiliseconds , SecondMiliseconds };
 
 
-	{ error , Reason } ->
-             { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
-             SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-                                          [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
-  		
-             SecondMiliseconds = get_timestamp(),
+		{ok, {{_Version, 503, _ReasonPhrase}, _Headers, _Body}} ->
+		     { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
+		     SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+		                                  [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
 
-	     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds }
-  end.
+		     SecondMiliseconds = get_timestamp(),
+	  		
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "service unavailable" , Time , FirstMiliseconds , SecondMiliseconds };
 
+		{ok, {{_Version, 500, _ReasonPhrase}, _Headers, _Body}} ->
+		     { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
+		     SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+		                                  [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
+
+		     SecondMiliseconds = get_timestamp(),
+	  		
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "internal server error" , Time , FirstMiliseconds , SecondMiliseconds };
+
+
+		{ error , Reason } ->
+		     { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
+		     SecondTimestamp = lists:flatten( io_lib:format( "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+		                                  [ Year2, Month2, Day2, Hour2, Minute2, Second2 ] ) ),
+	  		
+		     SecondMiliseconds = get_timestamp(),
+
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds }
+	  end
+
+     end.
 
 get_timestamp() ->
   {Mega, Sec, Micro} = os:timestamp(),
@@ -123,6 +132,7 @@ get_timestamp() ->
 init_file_service() ->
 
 	File = file_utils:open( "../output/response_time.csv" , _Opts=[ write , delayed_write ] ),
+	file_utils:write( File, "result,request,answer,simulation_time,description,request_time_mili,response_time_mili\n"),
         put ( file , File ),
 	run_file_service().
 
@@ -140,7 +150,7 @@ save_timestamp( Result , FirstTimestamp , SecondTimestamp , Time , FirstMiliseco
 
 	File = get( file ),	
 
-	file_utils:write( File, "~s,~s,~s,~w,~w,~w\n" , [ Result , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds ] ).
+	file_utils:write( File, "~s,~s,~s,~w,ok,~w,~w\n" , [ Result , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds ] ).
 
 
 save_timestamp_error( Result , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds ) ->
