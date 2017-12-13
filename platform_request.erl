@@ -42,7 +42,7 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 
 	true -> 
 	
-		ok;
+		PID ! { receive_park , ActorName , "error" };
 
 	false ->
 
@@ -69,7 +69,7 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 		
 				true -> 
 					FileServicePID ! { save_timestamp , FirstTimestamp , SecondTimestamp , Time , FirstMiliseconds , SecondMiliseconds },
-					call_parking_service( ActorName , Coordinates , PID , Radius * 2 , FileServicePID , Time );
+					call_parking_service( ActorName , Coordinates , PID , Radius + 100 , FileServicePID , Time );
 				false -> 
 
 					RegExp = "uuid.*",
@@ -91,7 +91,10 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 
 		     SecondMiliseconds = get_timestamp(),
 	  		
-		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "timeout" , Time , FirstMiliseconds , SecondMiliseconds };
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "timeout" , Time , FirstMiliseconds , SecondMiliseconds },
+
+			
+		     PID ! { receive_park , ActorName , "error" };
 
 
 		{ok, {{_Version, 503, _ReasonPhrase}, _Headers, _Body}} ->
@@ -101,7 +104,10 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 
 		     SecondMiliseconds = get_timestamp(),
 	  		
-		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "service unavailable" , Time , FirstMiliseconds , SecondMiliseconds };
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "service unavailable" , Time , FirstMiliseconds , SecondMiliseconds },
+
+                     
+		     PID ! { receive_park , ActorName , "error" };
 
 		{ok, {{_Version, 500, _ReasonPhrase}, _Headers, _Body}} ->
 		     { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
@@ -110,8 +116,10 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 
 		     SecondMiliseconds = get_timestamp(),
 	  		
-		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "internal server error" , Time , FirstMiliseconds , SecondMiliseconds };
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , "internal server error" , Time , FirstMiliseconds , SecondMiliseconds },
 
+                     
+		      PID ! { receive_park , ActorName , "error" };
 
 		{ error , Reason } ->
 		     { { Year2, Month2, Day2 }, { Hour2, Minute2, Second2 } } = calendar:local_time(),
@@ -120,7 +128,11 @@ call_parking_service( ActorName , Coordinates , PID , Radius , FileServicePID , 
 	  		
 		     SecondMiliseconds = get_timestamp(),
 
-		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds }
+		     FileServicePID ! { save_error , FirstTimestamp , SecondTimestamp , Reason , Time , FirstMiliseconds , SecondMiliseconds },
+
+                     
+		     PID ! { receive_park , ActorName , "error" }
+
 	  end
 
      end.
