@@ -1,4 +1,3 @@
-9,1,6,10,13
 library(ggmap)
 
 data1 <- read.csv("/home/eduardo/trips.csv", 
