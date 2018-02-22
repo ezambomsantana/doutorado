@@ -1,5 +1,3 @@
-library(ggmap)
-
 data1 <- read.csv("/home/eduardo/Doutorado/sbrc/test_clean.ns3", 
                   header=FALSE, sep = ";", 
                   colClasses= c("integer","integer","integer","numeric","numeric","character","integer"),
