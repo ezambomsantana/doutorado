@@ -51,7 +51,7 @@ speed_graph <- ggplot(time, aes(x = horas)) +
   xlab("Hour") + 
   ylab("Average Speed (km/h)")
 
-theme_set(theme_gray(base_size = 16))
+theme_set(theme_gray(base_size = 18))
 png('C:/dev/events_complete/time_distance_car.png', width = 800, height = 600)
 
 ggarrange(tempo_medio, distancia, count, speed_graph,
