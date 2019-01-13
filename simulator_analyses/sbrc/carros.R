@@ -1,7 +1,7 @@
 require("ggplot2")
 library(ggpubr)
 
-data <- read.csv("/home/eduardo/events_complete.csv", 
+data <- read.csv("C:/dev/events_complete/events_complete.csv", 
                  header=FALSE, sep = ";", 
                  colClasses= c("integer","character","character","integer","integer","integer"),
                  col.names=c("time","event","vehicle","last_position","duration","distance"))
@@ -28,31 +28,31 @@ speed <- aggregate(data_car$speed, list(cut(data_car$time, breaks=horas)), FUN=m
 time$horas <- c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
 time$distance <- distance$x / 1000
 time$tempo <- time$x / 60
-time$count <- count$x
+time$count <- count$x / 100
 time$speed <- speed$x
 
 tempo_medio <- ggplot(time, aes(x = horas)) + 
   geom_line(aes(y = tempo), color="steelblue") +
-  xlab("Hora do Dia") + 
-  ylab("Duração Média (m)")
+  xlab("Hour") + 
+  ylab("Average Duration (m)")
 
 distancia <- ggplot(time, aes(x = horas)) + 
   geom_line(aes(y = distance), color='red') + 
-  xlab("Hora do Dia") + 
-  ylab("Distância por Viagem (km)")
+  xlab("Hour") + 
+  ylab("Trip Distance (km)")
 
 count <- ggplot(time, aes(x = horas)) + 
   geom_line(aes(y = count), color='green') + 
-  xlab("Hora do Dia") + 
-  ylab("Veículos")
+  xlab("Hour") + 
+  ylab("Vehicle Count (x100)")
 
 speed_graph <- ggplot(time, aes(x = horas)) + 
   geom_line(aes(y = speed), color='green') + 
-  xlab("Hora do Dia") + 
-  ylab("Velocidade Média (km/h)")
+  xlab("Hour") + 
+  ylab("Average Speed (km/h)")
 
 theme_set(theme_gray(base_size = 16))
-png('time_distance_car.png', width = 800, height = 600)
+png('C:/dev/events_complete/time_distance_car.png', width = 800, height = 600)
 
 ggarrange(tempo_medio, distancia, count, speed_graph,
           labels = c("a)", "b)", "c)", "d)"),
